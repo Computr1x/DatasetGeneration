@@ -8,6 +8,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="fonts\Roboto-Regular.ttf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="fonts\Roboto-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="ExNihilo" Version="1.0.0-alpha" />
   </ItemGroup>
 
