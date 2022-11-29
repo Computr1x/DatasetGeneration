@@ -1,19 +1,6 @@
-﻿using DataSetGen.Generators;
-using SixLabors.ImageSharp;
+﻿using DataSetGen;
+using DataSetGen.Generators;
 
-// generation
-int seedCount = 3;
-Random r;
-for (int i = 0; i < seedCount; i++)
-{
-    var container = ContainerGenerator.GenerateSimpleContainer();
-    r = new Random(i);
-    container.Randomize(r);
-    var image = container.Render();
-    await image.SaveAsPngAsync($"./Results/{i}.png");
-
-    image = CaptchaMaskGenerator.Generate(container);
-    await image.SaveAsPngAsync($"./Results/{i}_mask.png");
-}
-
-Console.WriteLine("Done!");
+var generationPipeline = new GenerationPipeline(ContainerGenerator.GenerateSimpleContainer, CaptchaMaskGenerator.Generate);
+generationPipeline.ProgresNotify += (string message) => Console.WriteLine(message);
+await generationPipeline.Run();

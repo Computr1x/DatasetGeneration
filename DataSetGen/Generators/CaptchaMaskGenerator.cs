@@ -12,13 +12,13 @@ namespace DataSetGen.Generators
 {
     internal class CaptchaMaskGenerator
     {
-        public static Image Generate(Container container)
+        public static Container Generate(Container container)
         {
             var copyCaptchContainer = container.Copy();
             var visualsWithCaptcha = GetVisualsWithCaptcha(container);
             visualsWithCaptcha.ForEach(x => SetCaptchaMask(x));
 
-            return new Container(container.Size).WithChildren(visualsWithCaptcha).Render();
+            return new Container(container.Size).WithChildren(visualsWithCaptcha);
         }
 
         private static void SetCaptchaMask(Visual visual)
