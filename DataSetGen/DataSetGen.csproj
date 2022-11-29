@@ -8,11 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="fonts\Roboto-Regular.ttf" />
+    <None Remove="assets\fonts\Roboto-Regular.ttf" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="fonts\Roboto-Regular.ttf">
+    <Content Include="assets\fonts\Roboto-Regular.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

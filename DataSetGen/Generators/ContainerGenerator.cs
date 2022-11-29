@@ -13,9 +13,10 @@ namespace DataSetGen.Generators
 {
     internal static class ContainerGenerator
     {
-        internal static Container GenerateSimpleContainer() {
+        internal static Container GenerateSimpleContainer()
+        {
             FontCollection collection = new();
-            var robotoFont = collection.Add("./fonts/Roboto-Regular.ttf");
+            var robotoFont = collection.Add("./assets/fonts/Roboto-Regular.ttf");
 
             Size containerSize = new(512, 256);
             Point center = new(256, 128);
@@ -46,6 +47,31 @@ namespace DataSetGen.Generators
             Container container = new Container(containerSize)
                 .WithBackground(Color.White)
                 .WithContainer(captchaContainer);
+
+            return container;
+        }
+
+        internal static Container GenerateAdvancedSimpleContainer()
+        {
+            var container = GenerateSimpleContainer();
+
+            container.WithContainer(
+                new Container(container.Size)
+                    .WithColorBlendingMode(SixLabors.ImageSharp.PixelFormats.PixelColorBlendingMode.Multiply)
+                    .WithChildren(
+                        Enumerable.Range(0, 8).Select(x =>
+                            new Ellipse()
+                                .WithRandomizedPoint(0, container.Size.Width, 0, container.Size.Height)
+                                .WithRandomizedSize(50, 80)
+                                .WithType(VisualType.Filled)
+                                .WithBrush((BrushProperty brush) =>
+                                {
+                                    brush.WithRandomizedColor(32);
+                                    brush.WithType(BrushType.Solid);
+                                })
+                        ))
+                    .WithEffect(new Ripple()))
+                .WithBlendPercentage(0.5f);
 
             return container;
         }
