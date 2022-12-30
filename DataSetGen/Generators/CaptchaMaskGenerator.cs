@@ -2,16 +2,13 @@
 using ExNihilo.Extensions;
 using ExNihilo.Visuals;
 using SixLabors.ImageSharp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DataSetGen.Generators
 {
     internal class CaptchaMaskGenerator
     {
+        public static Color MaskColor { get; set; } = Color.White;
+
         public static Container Generate(Container container)
         {
             var copyCaptchContainer = container.Copy();
@@ -30,7 +27,7 @@ namespace DataSetGen.Generators
             }
             else if (visual is Captcha captcha)
             {
-                captcha.WithBrush(Color.Magenta);
+                captcha.WithBrush(MaskColor);
                 captcha.WithType(VisualType.Filled);
             }
         }
@@ -40,16 +37,16 @@ namespace DataSetGen.Generators
             // TODO remove all colors effects
             List<Visual> visuals = new();
 
-            if(!HasCaptcha(container))
+            if (!HasCaptcha(container))
                 return visuals;
 
             foreach (var visual in container.Children)
             {
-                if(visual is Container visualContainer)
+                if (visual is Container visualContainer)
                 {
                     visuals.AddRange(GetVisualsWithCaptcha(visualContainer));
                 }
-                else if(visual is Captcha)
+                else if (visual is Captcha)
                 {
                     // TODO remove all colors effects
                     visuals.Add(visual);
@@ -71,7 +68,7 @@ namespace DataSetGen.Generators
             {
                 if (visual is Container visualContainer)
                 {
-                    if(HasCaptcha(visualContainer)) 
+                    if (HasCaptcha(visualContainer))
                         return true;
                 }
                 else if (visual is Captcha)
