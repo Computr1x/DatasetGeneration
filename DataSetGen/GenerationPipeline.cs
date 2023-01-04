@@ -1,6 +1,8 @@
 ﻿using DataSetGen.Generators;
+using DataSetGen.Utils;
 using ExNihilo.Base;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace DataSetGen
 {
@@ -37,6 +39,8 @@ namespace DataSetGen
                 var maskContainer = maskGenerator(container);
                 image = maskContainer.Render();
                 await image.SaveAsPngAsync(Path.Combine(path, $"{i}_mask.png"));
+
+                BitMaskConverter.FindContours(image as Image<Rgba32>, Color.White);
 
                 ProgresNotify?.Invoke($"Container {i} is generated");
             }
