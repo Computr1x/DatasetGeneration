@@ -18,7 +18,7 @@ namespace DataSetGen.Utils
             if (!image.DangerousTryGetSinglePixelMemory(out var memory))
                 return false;
 
-            mask = new Mat(image.Width, image.Height, DepthType.Cv8U, 1);
+            mask = new Mat(image.Height, image.Width, DepthType.Cv8U, 1);
             var span = memory.Span;
             var maskPixel = maskColor.ToPixel<Rgba32>();
 
@@ -47,9 +47,25 @@ namespace DataSetGen.Utils
 
         public static void FindContours(Mat mat)
         {
+            //CvInvoke.Imshow("test", mat);
+            //CvInvoke.WaitKey();
             var contours = new Emgu.CV.Util.VectorOfVectorOfPoint();
             var hierarchy = new Mat();
-            CvInvoke.FindContours(mat, contours, hierarchy, Emgu.CV.CvEnum.RetrType.Tree, Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxSimple);
+            CvInvoke.FindContours(mat, contours, hierarchy, Emgu.CV.CvEnum.RetrType.External, Emgu.CV.CvEnum.ChainApproxMethod.ChainApproxNone);
+
+            // filter
+            var newContours = new Emgu.CV.Util.VectorOfVectorOfPoint();
+            for (int i = 0; i < contours.Size; i++)
+            {
+                if (contours[i].Size > 100)
+                    newContours.Push(contours[i]);
+            }
+
+            Mat newMat = new(mat.Rows, mat.Cols, DepthType.Cv8U, 1);
+            CvInvoke.DrawContours(newMat, newContours, -1, new Emgu.CV.Structure.MCvScalar(255, 0, 0));
+            CvInvoke.Imshow("test", newMat);
+            CvInvoke.WaitKey();
+            //CvInvoke.DestroyAllWindows();
             Console.WriteLine();
         }
     }
