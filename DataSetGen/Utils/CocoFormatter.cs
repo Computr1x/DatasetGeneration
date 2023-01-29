@@ -1,17 +1,49 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Drawing;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
 
-namespace DataSetGen.Annotators
+namespace DataSetGen.Utils;
+
+internal static class CocoFormatter
 {
-    internal class CocoFormatAnnotator
+    internal static Annotation Annotate(int id, int categoryId, Point[][] contours)
     {
+        int minX = 0, minY = 0, maxX = 0, maxY = 0;
+        List<List<float>> segmentation = new();
+        for (int i = 0; i < contours.Length; i++)
+        {
+            List<float> segment = new();
+            for (int j = 0; j < contours[i].Length; j++)
+            {
+                ref Point curPoint = ref contours[i][j];
+
+                if (curPoint.X < minX) minX = curPoint.X;
+                else if (curPoint.X > maxX) maxX = curPoint.X;
+                if (curPoint.Y < minY) minY = curPoint.Y;
+                else if (curPoint.Y > maxY) maxY = curPoint.Y;
+
+                segment.Add(curPoint.X);
+                segment.Add(curPoint.Y);
+            }
+            segmentation.Add(segment);
+        }
+
+        int width = maxX - minX;
+        int height = maxY - minY;
+        List<float> bbox = new() { minX, minY, width, height };
+        int area = width * height;
+
+        return new Annotation()
+        {
+            Id = id,
+            CategoryId = categoryId,
+            Iscrowd = 0,
+            Segmentation = segmentation,
+            ImageId = id,
+            Area = area,
+            Bbox = bbox,
+        };
     }
 }
-
 
 // Root myDeserializedClass = JsonSerializer.Deserialize<Root>(myJsonResponse);
 public class Annotation
@@ -26,16 +58,16 @@ public class Annotation
     public int Iscrowd { get; set; }
 
     [JsonPropertyName("segmentation")]
-    public List<List<double>> Segmentation { get; set; }
+    public List<List<float>> Segmentation { get; set; }
 
     [JsonPropertyName("image_id")]
     public int ImageId { get; set; }
 
     [JsonPropertyName("area")]
-    public double Area { get; set; }
+    public float Area { get; set; }
 
     [JsonPropertyName("bbox")]
-    public List<double> Bbox { get; set; }
+    public List<float> Bbox { get; set; }
 }
 
 public class Category
@@ -110,7 +142,7 @@ public class License
     public string Name { get; set; }
 }
 
-public class Root
+public class CocoData
 {
     [JsonPropertyName("info")]
     public Info Info { get; set; }

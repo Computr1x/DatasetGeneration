@@ -1,8 +1,10 @@
 ﻿using DataSetGen.Generators;
 using DataSetGen.Utils;
 using ExNihilo.Base;
+using ExNihilo.Utils;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using System.Text.Json;
 
 namespace DataSetGen
 {
@@ -11,8 +13,9 @@ namespace DataSetGen
         private Func<Container> containerGenerator;
         private Func<Container, Container> maskGenerator;
 
-        public string ResultFolder { get; set; } = "Result";
+        public string ResultFolder { get; set; } = "Results";
         public int SamplesCount { get; set; } = 3;
+        public bool AsSeparateFolder { get; set; } = false;
 
         public delegate void RunProgresHandler(string message);
         public event RunProgresHandler? ProgresNotify;
@@ -25,6 +28,8 @@ namespace DataSetGen
 
         public async Task Run()
         {
+            List<Annotation> annotations = new();
+            List<Utils.Image> images = new();
             string path = CreateFolder(ResultFolder);
 
             Random r;
@@ -33,17 +38,55 @@ namespace DataSetGen
                 var container = containerGenerator();
                 r = new Random(i);
                 container.Randomize(r);
-                var image = container.Render();
-                await image.SaveAsPngAsync(Path.Combine(path, $"{i}.png"));
+                using var image = container.Render();
+                string imageName = $"{i}.png";
+                await image.SaveAsPngAsync(Path.Combine(path, imageName));
 
                 var maskContainer = maskGenerator(container);
-                image = maskContainer.Render();
-                await image.SaveAsPngAsync(Path.Combine(path, $"{i}_mask.png"));
+                using var maskImage = maskContainer.Render();
+                //await maskImage.SaveAsPngAsync(Path.Combine(path, $"{i}_mask.png"));
 
-                BitMaskConverter.FindContours(image as Image<Rgba32>, Color.White);
+                var contours = BitMaskConverter.FindContours((Image<Rgba32>)maskImage, Color.White);
+                var annotatedContours = CocoFormatter.Annotate(1, 1, contours);
+                annotations.Add(annotatedContours);
+
+                Utils.Image imageData = new()
+                {
+                    DateCaptured = DateTime.Now.ToString(),
+                    FileName = imageName,
+                    Height = image.Height,
+                    Width = image.Width,
+                    Id = i,
+                };
+                images.Add(imageData);
 
                 ProgresNotify?.Invoke($"Container {i} is generated");
             }
+
+            var cocoData = new CocoData()
+            {
+                Annotations = annotations,
+                Categories = new List<Category>
+                {
+                    new Category() { Id = 0, Name = "Background" },
+                    new Category() { Id = 1, Name = "Text" },
+                },
+                Images = images,
+                Info = new Info()
+                {
+                    Contributor = "Me",
+                    DateCreated = DateTime.Now.ToString(),
+                    Description = "Text recognition dataset",
+                    Version = "1.0",
+                    Year = DateTime.Now.Year
+                },
+                Licenses = new List<License>()
+                {
+                    new License() { Id = 0, Name = "Apache License, Version 2.0", Url = "https://www.apache.org/licenses/LICENSE-2.0.txt" }
+                },
+            };
+            string cocoJson = JsonSerializer.Serialize(cocoData);
+            await File.WriteAllTextAsync(Path.Combine(path, "annotation.json"), cocoJson);
 
             ProgresNotify?.Invoke("Done!");
         }
