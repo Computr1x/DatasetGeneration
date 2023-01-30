@@ -30,7 +30,9 @@ namespace DataSetGen
         {
             List<Annotation> annotations = new();
             List<Utils.Image> images = new();
-            string path = CreateFolder(ResultFolder);
+            string resFolder = AsSeparateFolder ? Path.Combine(ResultFolder, DateTimeOffset.Now.ToUnixTimeSeconds().ToString()) : ResultFolder;
+            string path = CreateFolder(resFolder);
+
 
             Random r;
             for (int i = 0; i < SamplesCount; i++)
