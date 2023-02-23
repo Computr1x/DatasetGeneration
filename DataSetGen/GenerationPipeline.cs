@@ -33,6 +33,8 @@ namespace DataSetGen
             string resFolder = AsSeparateFolder ? Path.Combine(ResultFolder, DateTimeOffset.Now.ToUnixTimeSeconds().ToString()) : ResultFolder;
             string path = CreateFolder(resFolder);
 
+            string pngImagesPath = CreateFolder(Path.Combine(path, "PNGImages"));
+            string pngMasksPath = CreateFolder(Path.Combine(path, "PNGMasks"));
 
             Random r;
             for (int i = 0; i < SamplesCount; i++)
@@ -42,11 +44,11 @@ namespace DataSetGen
                 container.Randomize(r);
                 using var image = container.Render();
                 string imageName = $"{i}.png";
-                await image.SaveAsPngAsync(Path.Combine(path, imageName));
+                await image.SaveAsPngAsync(Path.Combine(pngImagesPath, imageName));
 
                 var maskContainer = maskGenerator(container);
                 using var maskImage = maskContainer.Render();
-                //await maskImage.SaveAsPngAsync(Path.Combine(path, $"{i}_mask.png"));
+                await maskImage.SaveAsPngAsync(Path.Combine(pngMasksPath, $"{i}.png"));
 
                 var contours = BitMaskConverter.FindContours((Image<Rgba32>)maskImage, Color.White);
                 var annotatedContours = CocoFormatter.Annotate(1, 1, contours);

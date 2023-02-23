@@ -6,7 +6,7 @@ var generationPipeline = new GenerationPipeline(
     CaptchaMaskGenerator.Generate)
 {
     AsSeparateFolder = true,
-    SamplesCount = 10,
+    SamplesCount = 100
 };
 generationPipeline.ProgresNotify += (string message) => Console.WriteLine(message);
 await generationPipeline.Run();

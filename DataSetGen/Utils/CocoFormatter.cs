@@ -7,7 +7,7 @@ internal static class CocoFormatter
 {
     internal static Annotation Annotate(int id, int categoryId, Point[][] contours)
     {
-        int minX = 0, minY = 0, maxX = 0, maxY = 0;
+        int minX = int.MaxValue, minY = int.MaxValue, maxX = 0, maxY = 0;
         List<List<float>> segmentation = new();
         for (int i = 0; i < contours.Length; i++)
         {
