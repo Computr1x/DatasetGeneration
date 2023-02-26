@@ -9,7 +9,7 @@ namespace DataSetGen.Generators
     {
         public static Color MaskColor { get; set; } = Color.White;
 
-        public static Container Generate(Container container)
+        public static Container GenerateMask(Container container)
         {
             var copyCaptchContainer = container.Copy();
             var visualsWithCaptcha = GetVisualsWithCaptcha(container);

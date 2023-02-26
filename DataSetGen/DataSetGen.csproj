@@ -8,11 +8,43 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="assets\fonts\actionj.ttf" />
+    <None Remove="assets\fonts\GLIMSTIC.ttf" />
+    <None Remove="assets\fonts\Mynerve-Regular.ttf" />
+    <None Remove="assets\fonts\Orbitron-Regulart.ttf" />
+    <None Remove="assets\fonts\PTSerif-Regular.ttf" />
     <None Remove="assets\fonts\Roboto-Regular.ttf" />
+    <None Remove="assets\fonts\RobotoCondensed-Regular.ttf" />
+    <None Remove="assets\fonts\RobotoMono-Regualr.ttf" />
+    <None Remove="assets\fonts\Shrikhand-Regular.ttf" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="assets\fonts\actionj.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="assets\fonts\GLIMSTIC.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="assets\fonts\Mynerve-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="assets\fonts\Orbitron-Regulart.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="assets\fonts\PTSerif-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="assets\fonts\Roboto-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="assets\fonts\RobotoCondensed-Regular.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="assets\fonts\RobotoMono-Regualr.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="assets\fonts\Shrikhand-Regular.ttf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

@@ -8,16 +8,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Rectangle = ExNihilo.Visuals.Rectangle;
 
 namespace DataSetGen.Generators
 {
     internal static class ContainerGenerator
     {
+        private static readonly FontCollection fonts = new();
+
+        static ContainerGenerator()
+        {
+            var fontFiles = Directory.GetFiles("./assets/fonts/");
+            foreach (var fontFile in fontFiles)
+                fonts.Add(fontFile);
+        }
+
         internal static Container GenerateSimpleContainer()
         {
-            FontCollection collection = new();
-            var robotoFont = collection.Add("./assets/fonts/Roboto-Regular.ttf");
-
             Size containerSize = new(512, 256);
             Point center = new(256, 128);
 
@@ -29,9 +36,9 @@ namespace DataSetGen.Generators
                 .WithRandomizedContent(stringPropertySetter =>
                 {
                     stringPropertySetter.CharactersSet = StringProperty.asciiUpperCase;
-                    stringPropertySetter.WithLength(6);
+                    stringPropertySetter.WithRandomizedLength(4, 8);
                 })
-                .WithFontFamily(robotoFont)
+                .WithRandomizedFontFamily(fonts.Families)
                 .WithRandomizedBrush(100);
 
             Container captchaContainer = new Container(containerSize)
@@ -41,17 +48,38 @@ namespace DataSetGen.Generators
                         .WithRandomizedAmplitude(5, 10)
                         .WithRandomizedWaveLength(100, 150)
                         .WithWaveWaveType(ExNihilo.Processors.WaveType.Sine)
+                    )
+                .WithEffect(
+                    new Rotate()
+                        .WithRandomizedDegree(-7, 7)
+                )
+                .WithEffect(
+                    new Shift()
+                        .WithRandomizedXShift(-containerSize.Width / 10, containerSize.Width / 10)
+                        .WithRandomizedYShift(-containerSize.Height / 10, containerSize.Height / 10)
+                );
+
+            Container backgroundContainter = new Container(containerSize)
+                .WithChild(
+                    new Rectangle()
+                        .WithSize(containerSize)
+                        .WithBrush(brush =>
+                        {
+                            brush.WithType(BrushType.Solid);
+                            brush.WithRandomizedColor(50);
+                        })
+                        .WithType(VisualType.Filled)
                     );
 
             // create main container
             Container container = new Container(containerSize)
-                .WithBackground(Color.White)
+                .WithContainer(backgroundContainter)
                 .WithContainer(captchaContainer);
 
             return container;
         }
 
-        internal static Container GenerateAdvancedSimpleContainer()
+        internal static Container GenerateAdvancedContainer1()
         {
             var container = GenerateSimpleContainer();
 
@@ -71,6 +99,35 @@ namespace DataSetGen.Generators
                                 })
                         ))
                     .WithEffect(new Ripple()))
+                .WithBlendPercentage(0.5f);
+
+            return container;
+        }
+
+        internal static Container GenerateAdvancedContainer2()
+        {
+            var container = GenerateSimpleContainer();
+
+            container.WithContainer(
+                new Container(container.Size)
+                    .WithColorBlendingMode(SixLabors.ImageSharp.PixelFormats.PixelColorBlendingMode.Add)
+                    .WithChildren(
+                        Enumerable.Range(0, 8).Select(x =>
+                            new Polygon()
+                                .WithRandomizedPoints(3, 6, container.Size.Width, 0, container.Size.Height)
+                                .WithType(VisualType.Filled)
+                                .WithBrush((BrushProperty brush) =>
+                                {
+                                    brush.WithRandomizedColor(32);
+                                    brush.WithType(BrushType.Solid);
+                                })
+                                .WithEffect(
+                                    new Wave()
+                                        .WithRandomizedAmplitude(10, 50)
+                                        .WithRandomizedWaveLength(50, 150)
+                                )
+                        ))
+                    .WithEffect(new GaussianNoise(0.3f, false)))
                 .WithBlendPercentage(0.5f);
 
             return container;

@@ -1,12 +1,17 @@
 ﻿using DataSetGen;
 using DataSetGen.Generators;
+using ExNihilo.Base;
 
-var generationPipeline = new GenerationPipeline(
-    ContainerGenerator.GenerateAdvancedSimpleContainer,
-    CaptchaMaskGenerator.Generate)
+List<Func<Container>> generators = new()
+{
+    ContainerGenerator.GenerateAdvancedContainer1,
+    ContainerGenerator.GenerateAdvancedContainer2,
+};
+
+var generationPipeline = new GenerationPipeline(generators)
 {
     AsSeparateFolder = true,
-    SamplesCount = 100
+    SamplesCount = 200
 };
 generationPipeline.ProgresNotify += (string message) => Console.WriteLine(message);
 await generationPipeline.Run();

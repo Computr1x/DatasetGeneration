@@ -10,23 +10,28 @@ namespace DataSetGen
 {
     internal class GenerationPipeline
     {
-        private Func<Container> containerGenerator;
-        private Func<Container, Container> maskGenerator;
+        private readonly List<Func<Container>> containerGenerators;
+
+        public delegate void RunProgresHandler(string message);
+        public event RunProgresHandler? ProgresNotify;
+
+        public GenerationPipeline(Func<Container> containerGenerator) : this(new List<Func<Container>>() { containerGenerator })
+        {
+        }
+
+        public GenerationPipeline(List<Func<Container>> containerGenerators)
+        {
+            this.containerGenerators = containerGenerators;
+        }
 
         public string ResultFolder { get; set; } = "Results";
         public int SamplesCount { get; set; } = 3;
         public bool AsSeparateFolder { get; set; } = false;
 
-        public delegate void RunProgresHandler(string message);
-        public event RunProgresHandler? ProgresNotify;
+        public Func<Container, Container> MaskGenerator { get; set; } = CaptchaMaskGenerator.GenerateMask;
 
-        public GenerationPipeline(Func<Container> containerGenerator, Func<Container, Container> maskGenerator)
-        {
-            this.containerGenerator = containerGenerator;
-            this.maskGenerator = maskGenerator;
-        }
 
-        public async Task Run()
+        public async Task Run(int seed = 0)
         {
             List<Annotation> annotations = new();
             List<Utils.Image> images = new();
@@ -36,22 +41,36 @@ namespace DataSetGen
             string pngImagesPath = CreateFolder(Path.Combine(path, "PNGImages"));
             string pngMasksPath = CreateFolder(Path.Combine(path, "PNGMasks"));
 
-            Random r;
+            Random r = new(seed);
+            int curContainerIndex = 0;
             for (int i = 0; i < SamplesCount; i++)
             {
-                var container = containerGenerator();
-                r = new Random(i);
+                if (curContainerIndex >= containerGenerators.Count)
+                    curContainerIndex = 0;
+
+                var container = containerGenerators[curContainerIndex++]();
                 container.Randomize(r);
                 using var image = container.Render();
                 string imageName = $"{i}.png";
-                await image.SaveAsPngAsync(Path.Combine(pngImagesPath, imageName));
 
-                var maskContainer = maskGenerator(container);
+                var maskContainer = MaskGenerator(container);
                 using var maskImage = maskContainer.Render();
-                await maskImage.SaveAsPngAsync(Path.Combine(pngMasksPath, $"{i}.png"));
 
                 var contours = BitMaskConverter.FindContours((Image<Rgba32>)maskImage, Color.White);
                 var annotatedContours = CocoFormatter.Annotate(1, 1, contours);
+                // if we not found any contours image not valid
+                if(annotatedContours.Segmentation.Count < 1)
+                {
+                    ProgresNotify?.Invoke($"Container {i} will regenerated");
+                    i--;
+                    continue;
+                }
+
+                // save images
+                await image.SaveAsPngAsync(Path.Combine(pngImagesPath, imageName));
+                await maskImage.SaveAsPngAsync(Path.Combine(pngMasksPath, imageName));
+
+                annotatedContours.Id = i;
                 annotations.Add(annotatedContours);
 
                 Utils.Image imageData = new()
@@ -83,10 +102,6 @@ namespace DataSetGen
                     Description = "Text recognition dataset",
                     Version = "1.0",
                     Year = DateTime.Now.Year
-                },
-                Licenses = new List<License>()
-                {
-                    new License() { Id = 0, Name = "Apache License, Version 2.0", Url = "https://www.apache.org/licenses/LICENSE-2.0.txt" }
                 },
             };
             string cocoJson = JsonSerializer.Serialize(cocoData);

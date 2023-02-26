@@ -87,9 +87,6 @@ public class Image
     [JsonPropertyName("id")]
     public int Id { get; set; }
 
-    [JsonPropertyName("license")]
-    public int License { get; set; }
-
     [JsonPropertyName("coco_url")]
     public string CocoUrl { get; set; }
 
@@ -130,25 +127,10 @@ public class Info
     public string DateCreated { get; set; }
 }
 
-public class License
-{
-    [JsonPropertyName("url")]
-    public string Url { get; set; }
-
-    [JsonPropertyName("id")]
-    public int Id { get; set; }
-
-    [JsonPropertyName("name")]
-    public string Name { get; set; }
-}
-
 public class CocoData
 {
     [JsonPropertyName("info")]
     public Info Info { get; set; }
-
-    [JsonPropertyName("licenses")]
-    public List<License> Licenses { get; set; }
 
     [JsonPropertyName("images")]
     public List<Image> Images { get; set; }
