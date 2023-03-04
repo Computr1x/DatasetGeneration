@@ -33,68 +33,31 @@ namespace DataSetGen
 
         public async Task Run(int seed = 0)
         {
-            List<Annotation> annotations = new();
-            List<Utils.Image> images = new();
             string resFolder = AsSeparateFolder ? Path.Combine(ResultFolder, DateTimeOffset.Now.ToUnixTimeSeconds().ToString()) : ResultFolder;
             string path = CreateFolder(resFolder);
 
             string pngImagesPath = CreateFolder(Path.Combine(path, "PNGImages"));
             string pngMasksPath = CreateFolder(Path.Combine(path, "PNGMasks"));
 
-            Random r = new(seed);
-            int curContainerIndex = 0;
-            for (int i = 0; i < SamplesCount; i++)
+            var images = new Dictionary<int, Utils.Image>();
+            var annotations = new Dictionary<int, Annotation>();
+
+            Parallel.For(0, SamplesCount, new ParallelOptions() { MaxDegreeOfParallelism = Environment.ProcessorCount }, async (int index) =>
             {
-                if (curContainerIndex >= containerGenerators.Count)
-                    curContainerIndex = 0;
-
-                var container = containerGenerators[curContainerIndex++]();
-                container.Randomize(r);
-                using var image = container.Render();
-                string imageName = $"{i}.png";
-
-                var maskContainer = MaskGenerator(container);
-                using var maskImage = maskContainer.Render();
-
-                var contours = BitMaskConverter.FindContours((Image<Rgba32>)maskImage, Color.White);
-                var annotatedContours = CocoFormatter.Annotate(1, 1, contours);
-                // if we not found any contours image not valid
-                if(annotatedContours.Segmentation.Count < 1)
-                {
-                    ProgresNotify?.Invoke($"Container {i} will regenerated");
-                    i--;
-                    continue;
-                }
-
-                // save images
-                await image.SaveAsPngAsync(Path.Combine(pngImagesPath, imageName));
-                await maskImage.SaveAsPngAsync(Path.Combine(pngMasksPath, imageName));
-
-                annotatedContours.Id = i;
-                annotations.Add(annotatedContours);
-
-                Utils.Image imageData = new()
-                {
-                    DateCaptured = DateTime.Now.ToString(),
-                    FileName = imageName,
-                    Height = image.Height,
-                    Width = image.Width,
-                    Id = i,
-                };
-                images.Add(imageData);
-
-                ProgresNotify?.Invoke($"Container {i} is generated");
-            }
+                var (imageInfo, annotation) = await GenerateData(seed, index, pngImagesPath, pngMasksPath);
+                images[index] = imageInfo;
+                annotations[index] = annotation;
+            });
 
             var cocoData = new CocoData()
             {
-                Annotations = annotations,
+                Annotations = annotations.OrderBy(x => x.Key).Select(x => x.Value).ToList(),
                 Categories = new List<Category>
                 {
                     new Category() { Id = 0, Name = "Background" },
                     new Category() { Id = 1, Name = "Text" },
                 },
-                Images = images,
+                Images = images.OrderBy(x => x.Key).Select(x => x.Value).ToList(),
                 Info = new Info()
                 {
                     Contributor = "Me",
@@ -108,6 +71,60 @@ namespace DataSetGen
             await File.WriteAllTextAsync(Path.Combine(path, "annotation.json"), cocoJson);
 
             ProgresNotify?.Invoke("Done!");
+        }
+
+        private async Task<(Utils.Image imageInfo, Annotation annotation)> GenerateData(int seed, int index, string pngImagesPath, string pngMasksPath)
+        {
+            Random r = new Random(seed + index);
+            var container = containerGenerators[index % containerGenerators.Count]();
+            SixLabors.ImageSharp.Image? image = null, maskImage = null;
+            Annotation annotation;
+            string imageName = $"{index}.png";
+
+            try
+            {
+                do
+                {
+                    container.Randomize(r);
+
+                    image = container.Render();
+
+                    var maskContainer = MaskGenerator(container);
+                    maskImage = maskContainer.Render();
+
+                    var contours = BitMaskConverter.FindContours((Image<Rgba32>)maskImage, Color.White);
+                    annotation = CocoFormatter.Annotate(1, 1, contours);
+                    annotation.Id = index;
+
+                    // if we not found any contours image not valid
+                    if (annotation.Segmentation.Count < 1)
+                    {
+                        ProgresNotify?.Invoke($"Container {index} will regenerated");
+                    }
+
+                } while (annotation.Segmentation.Count < 1);
+
+                // save images
+                await image.SaveAsPngAsync(Path.Combine(pngImagesPath, imageName));
+                await maskImage.SaveAsPngAsync(Path.Combine(pngMasksPath, imageName));
+
+                Utils.Image imageData = new()
+                {
+                    DateCaptured = DateTime.Now.ToString(),
+                    FileName = imageName,
+                    Height = image.Height,
+                    Width = image.Width,
+                    Id = index,
+                };
+
+                ProgresNotify?.Invoke($"Container {index} is generated");
+                return (imageData, annotation);
+            }
+            finally
+            {
+                image?.Dispose();
+                maskImage?.Dispose();
+            }
         }
 
         private static string CreateFolder(string folderName)
